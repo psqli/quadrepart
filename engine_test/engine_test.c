@@ -19,8 +19,14 @@
 
 #include <Servo.h>
 
-/* Time in miliseconds */
+/* Timer expire time (milisecs) */
 #define TIMER_EXPIRE_TIME 500
+/* Serial timeout (milisecs) */
+#define SERIAL_TIMEOUT 10
+/* Serial buffer lenght (bytes) */
+#define SERIAL_BUFFER_LEN 32
+/* Serial input minimum lenght acceptable (bytes) */
+#define INPUT_MIN_LEN 3
 
 typedef struct {
 	Servo engine;
@@ -36,26 +42,40 @@ engine_t engine[4] = {
 	{ .pin = 9 },
 };
 
-unsigned long last_time = 0;
-unsigned long current_time = 0;
+unsigned long timer_last_time = 0;
+unsigned long timer_current_time = 0;
 
 /**
- * @p engine_id  The engine ID that user has inputted
- * @p value  A value between 0-179 that user has inputted
+ * @p engine_id  pointer to store the engine ID that user inputted
+ * @p value  pointer to store the value between 0-179 that user inputted
  */
-static int
+int
 read_from_terminal(int *engine_id, int *value)
 {
-	int i;
-	char tmp_str[32];
+	char buffer[SERIAL_BUFFER_LEN];
+	char len;
+	char *tok_ptr;
 
 	if(!Serial.available())
 		return -1;
 
-	for(i = 0; i < 32 || tmp_str[i] == '\n'; i++)
-	{
-		
-	}
+	if((len = Serial.readBytes(buffer, SERIAL_BUFFER_LEN)) < INPUT_MIN_LEN)
+		return -1;
+
+	buffer[SERIAL_BUFFER_LEN - 1] = '\0'; /* EOF character at the end */
+
+	if((tok_ptr = strtok(buffer, " ")) == NULL)
+		return -1;
+	if((tok_ptr = strtok(NULL, " ")) == NULL)
+		return -1;
+
+	*engine_id = atoi(buffer);
+	*value = atoi(tok_ptr);
+
+	if(*engine_id < 0 || *engine_id > 4 || *value < 0 || *value > 179)
+		return -1;
+
+	return 0;
 }
 
 void
@@ -64,6 +84,7 @@ setup(void)
 	int i;
 
 	Serial.begin(9600);
+	Serial.setTimeout(SERIAL_TIMEOUT);
 
 	for(i = 0; i < 4; i++)
 	{
@@ -93,11 +114,14 @@ loop(void)
 			engine[i].engine.write(engine[i].value);
 	
 		/* Show some info each TIMER_EXPIRE_TIME miliseconds */
-		current_time = millis();
-		if(current_time > last_time + TIMER_EXPIRE_TIME)
+		timer_current_time = millis();
+		if(timer_current_time > timer_last_time + TIMER_EXPIRE_TIME)
 		{
 			/* None yet :-) */
 			Serial.print("Ok");
+
+			/* last time timer has expired was now */
+			timer_last_time = timer_current_time;
 		}
 	}
 }
