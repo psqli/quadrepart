@@ -34,13 +34,7 @@ typedef struct {
 	int value;
 } engine_t;
 
-/* Engine control pins need to be PWM! */
-engine_t engine[4] = {
-	{ .pin = 3 },
-	{ .pin = 5 },
-	{ .pin = 6 },
-	{ .pin = 9 },
-};
+engine_t engine[4];
 
 unsigned long timer_last_time = 0;
 unsigned long timer_current_time = 0;
@@ -85,6 +79,12 @@ setup(void)
 
 	Serial.begin(9600);
 	Serial.setTimeout(SERIAL_TIMEOUT);
+
+	/* Engine control pins need to be PWM! */
+	engine[0].pin = 3;
+	engine[1].pin = 5;
+	engine[2].pin = 6;
+	engine[3].pin = 9;
 
 	for(i = 0; i < 4; i++)
 	{
