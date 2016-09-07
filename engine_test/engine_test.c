@@ -20,7 +20,7 @@
 #include <Servo.h>
 
 /* Timer expire time (milisecs) */
-#define TIMER_EXPIRE_TIME 500
+#define TIMER_EXPIRE_TIME 1000
 /* Serial timeout (milisecs) */
 #define SERIAL_TIMEOUT 10
 /* Serial buffer lenght (bytes) */
@@ -66,7 +66,7 @@ read_from_terminal(int *engine_id, int *value)
 	*engine_id = atoi(buffer);
 	*value = atoi(tok_ptr);
 
-	if(*engine_id < 0 || *engine_id > 4 || *value < 0 || *value > 179)
+	if(*engine_id < 0 || *engine_id > 3 || *value < 0 || *value > 179)
 		return -1;
 
 	return 0;
@@ -117,8 +117,16 @@ loop(void)
 		timer_current_time = millis();
 		if(timer_current_time > timer_last_time + TIMER_EXPIRE_TIME)
 		{
-			/* None yet :-) */
-			Serial.print("Ok");
+			/* Print info about our engines and its values */
+			Serial.print("----------\n");
+			for(i = 0; i < 4; i++)
+			{
+				Serial.print("engine ");
+				Serial.print(i);
+				Serial.print(" = ");
+				Serial.print(engine[i].value);
+				Serial.print("\n");
+			}
 
 			/* last time timer has expired was now */
 			timer_last_time = timer_current_time;
